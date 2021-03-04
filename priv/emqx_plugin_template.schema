@@ -1,0 +1,4 @@
+{mapping, "wow.aa", "emqx_plugin_template.aa", [
+  {default, emqxcl},
+  {datatype, atom}
+]}.

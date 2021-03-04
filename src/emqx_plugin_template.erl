@@ -52,6 +52,7 @@
 
 %% Called when the plugin application start
 load(Env) ->
+    io:format("oaoa ~p~n", [Env]),
     emqx:hook('client.connect',      {?MODULE, on_client_connect, [Env]}),
     emqx:hook('client.connack',      {?MODULE, on_client_connack, [Env]}),
     emqx:hook('client.connected',    {?MODULE, on_client_connected, [Env]}),
@@ -146,6 +147,7 @@ on_message_publish(Message = #message{topic = <<"$SYS/", _/binary>>}, _Env) ->
     {ok, Message};
 
 on_message_publish(Message, _Env) ->
+    io:format("as ~p~n", [jsone:decode(<<"[1,2,3]">>)]),
     io:format("Publish ~s~n", [emqx_message:format(Message)]),
     {ok, Message}.
 
