@@ -16,8 +16,6 @@
 
 -module(emqx_plugin_template).
 
--include("emqx.hrl").
-
 -export([ load/1
         , unload/0
         ]).
@@ -142,18 +140,26 @@ on_session_terminated(_ClientInfo = #{clientid := ClientId}, Reason, SessInfo, _
 %%--------------------------------------------------------------------
 
 %% Transform message and return
-on_message_publish(Message = #message{topic = <<"$SYS/", _/binary>>}, _Env) ->
-    {ok, Message};
-
 on_message_publish(Message, _Env) ->
-    io:format("Publish ~s~n", [emqx_message:format(Message)]),
-    {ok, Message}.
+    MMessage = emqx_message:to_map(Message),
+    case maps:get(topic, MMessage) of
+        <<"$SYS/", _/binary>> ->
+            {ok, Message};
+        _ ->
+            NewMessage = emqx_message:to_message(MMessage#{from => <<"plugin_template">>}),
+            io:format("Publish ~s~n", [emqx_message:format(NewMessage)]),
+            {ok, NewMessage}
+    end.
 
-on_message_dropped(#message{topic = <<"$SYS/", _/binary>>}, _By, _Reason, _Env) ->
-    ok;
 on_message_dropped(Message, _By = #{node := Node}, Reason, _Env) ->
-    io:format("Message dropped by node ~s due to ~s: ~s~n",
-              [Node, Reason, emqx_message:format(Message)]).
+    MMessage = emqx_message:to_map(Message),
+    case maps:get(topic, MMessage) of
+        <<"$SYS/", _/binary>> ->
+            ok;
+        _ ->
+            io:format("Message dropped by node ~s due to ~s: ~s~n",
+                      [Node, Reason, emqx_message:format(Message)])
+    end.
 
 on_message_delivered(_ClientInfo = #{clientid := ClientId}, Message, _Env) ->
     io:format("Message delivered to client(~s): ~s~n",
